@@ -25,12 +25,19 @@ const initNetworks = () => {
 };
 
 // Matcher function. Takes geojson as input and returns geojson with map matching confidence level-
-const matchGeometry = async (profile, geometry) => {
+// User is now allowed to control the radius by adding it as a parameter to the call
+const matchGeometry = async (profile, geometry, radius = 15.0) => {
   if (!getProfiles().includes(profile)) {
     throw Error(`Invalid profile: ${profile}`);
   }
 
   const osrm = networks[profile];
+
+  const radiusNum = Number(radius);
+
+  if (!Number.isFinite(radiusNum) || radiusNum <= 0) {
+    throw Error(`Invalid radius: ${radius}`);
+  }
 
   return new Promise((resolve, reject) => {
     osrm.match(
@@ -40,17 +47,18 @@ const matchGeometry = async (profile, geometry) => {
         geometries: 'geojson',
         tidy: true,
         gaps: 'ignore',
-        radiuses: geometry.coordinates.map(() => 15.0), // Set accuracy to 15 meters
+        radiuses: geometry.coordinates.map(() => radiusNum),
       },
       (err, response) => {
         if (err) {
           reject(err);
           return;
         }
+
         resolve({
           confidence:
             response.matchings.reduce((prev, curr) => prev + curr.confidence, 0) /
-            response.matchings.length, // Avg of confidence values.
+            response.matchings.length,
           geometry: {
             coordinates: response.matchings.reduce(
               (prev, curr) => prev.concat(curr.geometry.coordinates),

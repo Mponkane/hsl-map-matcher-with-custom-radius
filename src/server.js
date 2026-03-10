@@ -98,7 +98,7 @@ app.post('/match/:profile', [validateProfile, validateBody], async (req, res, ne
   const data = req.body;
 
   try {
-    const fittedGeometry = await matchGeometry(profile, data.geometry);
+    const fittedGeometry = await matchGeometry(profile, data.geometry, data.radius);
     return res.send(fittedGeometry);
   } catch (err) {
     // return 400 if the fit was not possible
